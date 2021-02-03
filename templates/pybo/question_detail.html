@@ -79,7 +79,14 @@
     <h5 class = "border-bottom my-3 py-2">
         {{ question.answer_set.count }}개의 답변이 있습니다.
     </h5>
-    {% for answer in question.answer_set.all %}
+    <!-- 답변 정렬 -->
+    <div class="col-2">
+    <select class="form-control so">
+        <option value="recent" {% if so == 'recent' %}selected{% endif %}>최신순</option>
+        <option value="recommend" {% if so == 'recommend' %}selected{% endif %}>추천순</option>
+    </select>
+    </div>
+    {% for answer in answer_list %}
     <a name="answer_{{ answer.id }}"></a>
     <div class="row my-3">
         <div class="col-1">     <!-- 추천 영역 -->
@@ -145,9 +152,49 @@
             </div>
         </div>
     </div>
-    <!-- !! -->
-
     {% endfor %}
+    <!-- 페이징 처리 시작! -->
+    <ul class="pagination justify-content-center">
+        <!-- 이전 페이지 -->
+        {% if answer_list.has_previous %}
+        <li class="page-item">
+            <a class="page-link"
+               data-page="{{ answer_list.previous_page_number }}" href="#">이전</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <a class="page-link" tabindex="-1" aria-disabled="true" href="#">이전</a>
+        </li>
+        {% endif %}
+        <!-- 페이지 리스트 -->
+        {% for page_number in answer_list.paginator.page_range %}
+        {% if page_number >= answer_list.number|add:-5 and page_number <= answer_list.number|add:5 %}
+            {% if page_number == answer_list.number %}
+            <li class="page-item active" aria-current="page">
+                <a class="page-link"
+                   data-page="{{ page_number }}" href="#">{{ page_number }}</a>
+            </li>
+            {% else %}
+            <li class = "page-item">
+                <a class="page-link"
+                   data-page="{{ page_number }}" href="#">{{ page_number }}</a>
+            </li>
+            {% endif %}
+        {% endif %}
+        {% endfor %}
+        <!-- 다음 페이지 -->
+        {% if answer_list.has_next %}
+        <li class="page-item">
+            <a class="page-link"
+               data-page="{{ answer_list.next_page_number }}" href="#">다음</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <a class="page-link" tabindex="-1" aria-disabled="true" href="#">다음</a>
+        </li>
+        {% endif %}
+    </ul>
+    <!-- 페이징 처리 끝 -->
     <form action="{% url 'pybo:answer_create' question.id %}" method="post" class="my-3">
         {% csrf_token %}
         {% if form.errors %}
@@ -167,6 +214,10 @@
         <input type="submit" value="답변 등록" class="btn btn-primary">
     </form>
 </div>
+<form id="searchForm" method="get" action="{% url 'pybo:detail' question.id %}">
+    <input type="hidden" id="page" name="page" value="{{ page }}">
+    <input type="hidden" id="so" name="so" value="{{ so }}">
+</form>
 {% endblock %}
 <!-- {% csrf_token %} : form 엘리먼트를 통해 전송된 데이터(답변)가 실제로 웹 브라우저에서 작성된 데이터인지 판단하는 검사기 역할,
         form 태그 밑에 항상 작성해야함 -->
@@ -186,6 +237,15 @@ $(document).ready(function(){
         }
     });
 
+    $(".page-link").on('click', function(){
+        $("#page").val($(this).data("page"));
+        $("#searchForm").submit();
+    });
+    $(".so").on('change', function(){
+        $("#so").val($(this).val());
+        $("#page").val(1);
+        $("#searchForm").submit();
+    });
 });
 </script>
 {% endblock %}

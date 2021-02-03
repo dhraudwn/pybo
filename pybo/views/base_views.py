@@ -2,7 +2,8 @@ from django.core.paginator import Paginator
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q, Count
 
-from pybo.models import Question
+from pybo.models import Question, Answer
+
 
 #기본 관리
 
@@ -52,7 +53,23 @@ def index(request):
 #여기서 request는 장고에 의해 자동으로 전달되는 Http 요청 객체
 
 def detail(request, question_id):
-    #pybo 내용 출력
+    # pybo 내용 출력
+    # 입력 인자
     question = get_object_or_404(Question, pk=question_id)
-    context = {'question': question}
+
+    page = request.GET.get('page', '1')  # 페이지
+    so = request.GET.get('so', 'recommend')  # 정렬기준, default 는 추천순, 추천순/최신순 가능
+
+    # 정렬
+    if so == 'recommend':
+        answer_list = Answer.objects.annotate(
+            num_voter=Count('voter')).filter(question=question).order_by('-num_voter', '-create_date')
+    else:
+        answer_list = Answer.objects.filter(question=question).order_by('-create_date')
+
+    # 페이징 처리
+    paginator = Paginator(answer_list, 3)  # 페이지당 3개씩 보여주기
+    page_obj = paginator.get_page(page)
+
+    context = {'question': question, 'answer_list': page_obj, 'page': page, 'so': so}
     return render(request, 'pybo/question_detail.html', context)
