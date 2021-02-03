@@ -1,7 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
-# 모델이 변경되면 makemigrations, migrate 해줘야 함
+"""
+모델이 생성,변경된 경우 migrate 명령을 통해 테이블을 생성해주어야 함.
+migrate를 통해 테이블을 생성하기 위해서는 테이블 작업 파일이 필요
+이를 위해 makemigrations를 해주어야 함.
+"""
+
 
 class Question(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author_question')
